@@ -1,0 +1,23 @@
+{
+  "total_requests": 36,
+  "blocked_requests": 30,
+  "block_rate": 0.8333,
+  "rate_limit_hits": 5,
+  "judge_checks": 0,
+  "judge_fails": 0,
+  "judge_fail_rate": 0.0,
+  "output_redactions": 0,
+  "llm_errors": 0,
+  "blocked_by_layer": {
+    "input_guardrail": 25,
+    "rate_limiter": 5
+  },
+  "alerts": [
+    {
+      "metric": "block_rate",
+      "value": 0.8333333333333334,
+      "threshold": 0.5,
+      "message": "High block rate 83% (> 50%) — possible attack."
+    }
+  ]
+}

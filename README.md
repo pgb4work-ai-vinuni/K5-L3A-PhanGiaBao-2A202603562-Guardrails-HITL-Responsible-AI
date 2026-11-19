@@ -1,3 +1,60 @@
+# Bài nộp — Day 11 Guardrails / HITL / Responsible AI
+
+| | |
+|---|---|
+| **Họ tên** | Phan Gia Bảo |
+| **MSSV** | 2A202603562 |
+| **Lớp** | K5 — L3A |
+| **Repo** | `K5-L3A-PhanGiaBao-2A202603562-Guardrails-HITL-Responsible-AI` |
+
+### Cách chạy ngắn
+
+```powershell
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+Copy-Item .env.example .env      # điền key (xem ghi chú CP4 bên dưới)
+
+python src/main.py --part 2      # CP2 — input/output guardrails (in terminal)
+python src/main.py --part 3      # CP3 — pipeline Blue -> outputs/results.json, audit_log.json, metrics.json
+python src/main.py --part 4      # CP4 — tấn công Red + Red Advance -> outputs/*attack*.json
+pytest tests/smoke tests/public -q
+python scripts/grade.py --submission-dir . --out outputs/grade_report.json
+```
+
+### Phần đã làm
+
+| Checkpoint | File | Nội dung chính |
+|---|---|---|
+| CP2 | `src/guardrails/input_guardrails.py` | `detect_injection` (chuẩn hoá NFKC, bỏ ký tự zero-width, bỏ dấu tiếng Việt; regex cho override, đổi vai, moi secret, mã hoá, header `SYSTEM:` trong email/RAG, tiếng Việt), `topic_filter`, `InputGuardrailPlugin` (giới hạn độ dài) |
+| CP2 | `src/guardrails/output_guardrails.py` | `content_filter`: che secret của lab, password, API key, host nội bộ, email, SĐT VN, CCCD/CMND; phát hiện secret bị tách ký tự |
+| CP3 | `src/assignment/rate_limiter.py` | Sliding window theo từng `user_id` (10 request / 60s) |
+| CP3 | `src/assignment/audit_log.py`, `monitoring.py` | Log input/output theo `request_id` + latency; metrics, block theo lớp, alert |
+| CP3 | `src/assignment/pipeline.py` | Thứ tự RateLimit → Input → LLM → Output; `is_egress_allowed` (HTTPS + domain VinBank + payload sạch); chạy 4 nhóm test qua pipeline thật |
+| CP4 | `src/attacks/attacks.py` | 5 prompt: điền .env, đổi sang JSON, kịch bản diễn tập sự cố, so sánh với giá trị sai, checklist leo thang; tự đợi / thử lại khi gặp 429 |
+
+### Kết quả (tự sinh trong `outputs/lab_report.md`)
+
+- Blue: safe bị chặn nhầm `0/6` · attack bị chặn `8/8` · edge `7/7` · rate limit chặn `5/15`
+- Red: leak `2/5` · Red Advance: leak `0/5` (chặn ở lớp regex input)
+
+### Ghi chú CP4 — model Red / Red Advance
+
+CP4 chạy trên **Groq `openai/gpt-oss-120b`** (dùng Groq do Gemini free tier bị `429 RESOURCE_EXHAUSTED`).
+Code gốc không bị sửa: Groq được nối qua nhánh `openai` của starter bằng biến môi trường, nên
+`attack_results.json` ghi `llm_provider: "openai"`, `llm_model: "openai/gpt-oss-120b"`. Cấu hình `.env` để replay:
+
+```env
+RED_TEAM_PROVIDER=openai
+OPENAI_API_KEY=gsk_...                       # key Groq
+OPENAI_BASE_URL=https://api.groq.com/openai/v1
+OPENAI_MODEL=openai/gpt-oss-120b
+```
+
+Blue không bị ảnh hưởng (luôn OpenRouter `liquid/lfm-3-1.7b:free`).
+
+---
+
 # Day 11 — Controlled Agent Security (2026)
 
 > 👤 **Hình thức:** bài tập **cá nhân** (1 người / 1 MSSV).  
